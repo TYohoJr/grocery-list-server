@@ -1,0 +1,24 @@
+{
+  "name": "grocery-list-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "express.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TYohoJr/grocery-list-server.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TYohoJr/grocery-list-server/issues"
+  },
+  "homepage": "https://github.com/TYohoJr/grocery-list-server#readme",
+  "dependencies": {
+    "dotenv": "^5.0.1",
+    "express": "^4.16.3",
+    "path": "^0.12.7"
+  }
+}
