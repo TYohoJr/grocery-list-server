@@ -18,9 +18,10 @@ var db;
 function verifyToken(req, res, next) {
     var token = req.body.token;
     if (token) {
-        jwt.verify(token, "Secret", (err, decode) => {
+        jwt.verify(token, "chicago", (err, decode) => {
             if (err) {
                 res.send("Wrong token")
+                console.log(`wrong token`)
             } else {
                 res.locals.decode = decode
                 next();
@@ -33,7 +34,7 @@ function verifyToken(req, res, next) {
 
 MongoClient.connect(`mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@ds115219.mlab.com:15219/grocery-app`, (err, client) => {
     if (err) return console.log(err)
-    db = client.db("grocery-app") // whatever your database name is
+    db = client.db("grocery-app")
     app.listen(process.env.PORT || 8080, () => {
         var curPort = process.env.PORT;
         if (curPort === undefined) {
@@ -47,32 +48,41 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-app.post('/sign-up', (req, res) => {
+app.post('/signup', (req, res) => {
     if (req.body.username.length && req.body.password.length) {
         db.collection('users').find({ username: req.body.username }).toArray((err, dataMatch) => {
             if (!dataMatch.length) {
                 bcrypt.hash(req.body.password, saltRounds, function (err, hash) {
                     // Store hash in your password DB.
-                    db.collection('users').save({ username: req.body.username, password: hash, work: req.body.work }, (err, result) => {
+                    db.collection('users').save({ username: req.body.username, password: hash, items: [] }, (err, result) => {
                         if (err) {
-                            res.json("Failed")
+                            res.json({
+                                message: `${err}`
+                            })
                             return console.log(err);
                         } else {
-                            res.json("Sign Up Successful")
+                            res.json({
+                                message: "Sign Up Successful!\nPlease log in",
+                                check: true
+                            })
                             console.log('saved to database');
                         }
                     });
                 });
             } else {
-                res.json('This username already exists')
+                res.json({
+                    message: 'This username already exists'
+                })
             }
         })
     } else {
-        res.json(`Error: username or password can't be blank`)
+        res.json({
+            message: `Error: username or password can't be blank`
+        })
     }
 });
 
-app.post("/sign-in", (req, res) => {
+app.post("/login", (req, res) => {
     db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
         if (!user.length) {
             res.json({
@@ -90,7 +100,8 @@ app.post("/sign-in", (req, res) => {
                     console.log(`user: "${req.body.username}" has logged in at ${new Date()}`)
                     res.json({
                         message: "Login successful!",
-                        myToken: token
+                        myToken: token,
+                        check: true
                     });
                 } else if (resolve === false) {
                     console.log(`user: "${req.body.username}" has failed a login in at ${new Date()}`)
@@ -102,3 +113,44 @@ app.post("/sign-in", (req, res) => {
         }
     })
 });
+
+app.post("/submit", verifyToken, (req, res) => {
+    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+        db.collection("users").update(
+            { username: req.body.username },
+            {
+                $push: {
+                    items: [req.body.item]
+                }
+            }
+        )
+    })
+    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+        res.json({
+            message: `success retrieve`,
+            item: user
+        })
+    })
+})
+
+app.post("/remove", verifyToken, (req, res) => {
+    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+        db.collection("users").update(
+            { username: req.body.username },
+            {
+                $pull: {
+                    items: {
+                        $in:
+                        [req.body.item]
+                    }
+                }
+            }
+        )
+    })
+    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+        res.json({
+            message: `success retrieve`,
+            item: user
+        })
+    })
+})
