@@ -101,7 +101,9 @@ app.post("/login", (req, res) => {
                     res.json({
                         message: "Login successful!",
                         myToken: token,
-                        check: true
+                        check: true,
+                        item:user
+
                     });
                 } else if (resolve === false) {
                     console.log(`user: "${req.body.username}" has failed a login in at ${new Date()}`)
@@ -115,16 +117,16 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/submit", verifyToken, (req, res) => {
-    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+    // db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
         db.collection("users").update(
             { username: req.body.username },
             {
                 $push: {
-                    items: [req.body.item]
+                items: req.body.item
                 }
             }
         )
-    })
+    // })
     db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
         res.json({
             message: `success retrieve`,
@@ -134,23 +136,20 @@ app.post("/submit", verifyToken, (req, res) => {
 })
 
 app.post("/remove", verifyToken, (req, res) => {
-    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+    // db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
         db.collection("users").update(
             { username: req.body.username },
             {
                 $pull: {
-                    items: {
-                        $in:
-                        [req.body.item]
-                    }
+                    items:req.body.item
                 }
             }
         )
-    })
-    db.collection("users").find({ username: req.body.username }).toArray((err, user) => {
+    
+    db.collection("users").find({ username: req.body.username }).toArray((err, user2) => {
         res.json({
-            message: `success retrieve`,
-            item: user
+            message: `success remove`,
+            item: user2
         })
     })
 })
